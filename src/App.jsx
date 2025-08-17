@@ -344,6 +344,61 @@ export default function App(){
     }
   };
 
+  const testMindMeisterEndpoints = async () => {
+    console.log('=== TEST ENDPOINTS MINDMAPSTER ===');
+    console.log('Personal Access Token:', PERSONAL_ACCESS_TOKEN.substring(0, 10) + '...');
+    
+    // Lista di possibili endpoint API di MindMeister
+    const endpoints = [
+      'https://www.mindmeister.com/api/v2/user',
+      'https://www.mindmeister.com/api/v2/maps',
+      'https://www.mindmeister.com/api/v1/user',
+      'https://www.mindmeister.com/api/v1/maps',
+      'https://www.mindmeister.com/api/user',
+      'https://www.mindmeister.com/api/maps',
+      'https://www.mindmeister.com/oauth2/userinfo',
+      'https://www.mindmeister.com/oauth2/me',
+      'https://api.mindmeister.com/v2/user',
+      'https://api.mindmeister.com/v2/maps',
+      'https://api.mindmeister.com/v1/user',
+      'https://api.mindmeister.com/v1/maps',
+      'https://api.mindmeister.com/user',
+      'https://api.mindmeister.com/maps'
+    ];
+    
+    for (const endpoint of endpoints) {
+      console.log(`\n--- Testing ${endpoint} ---`);
+      
+      try {
+        const response = await fetch(endpoint, {
+          headers: { 
+            'Authorization': `Bearer ${PERSONAL_ACCESS_TOKEN}`,
+            'Accept': 'application/json'
+          }
+        });
+        
+        console.log(`Status: ${response.status}`);
+        console.log(`Headers:`, Object.fromEntries(response.headers.entries()));
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('✅ SUCCESS:', data);
+          alert(`✅ Endpoint funzionante trovato!\n${endpoint}\n\nVedi console per dettagli.`);
+          return endpoint;
+        } else {
+          const text = await response.text();
+          console.log(`❌ Error: ${text.substring(0, 200)}`);
+        }
+      } catch (error) {
+        console.log(`❌ Exception: ${error.message}`);
+      }
+    }
+    
+    console.log('\n❌ Nessun endpoint funzionante trovato');
+    alert('❌ Nessun endpoint API funzionante trovato. Vedi console per dettagli.');
+    return null;
+  };
+
   const uploadWithPersonalToken = async () => {
     if (!file) {
       alert('Seleziona un file .md o .opml');
@@ -732,6 +787,9 @@ export default function App(){
             alert('Test API Keys completato! Vedi console per dettagli.');
           }}>
             Test API Dettagliato
+          </button>
+          <button className="button green" onClick={testMindMeisterEndpoints}>
+            Test Endpoints MM
           </button>
         </div>
 
