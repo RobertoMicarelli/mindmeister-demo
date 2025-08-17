@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 
 const CLIENT_ID = "SC42NPAvo_Kyx4j0mwywh6qnGqdXMMpl5GYnSfqgxzs";
 const REDIRECT_URI = "https://robertomicarelli.github.io/mindmeister-demo/";
+// Per test locale, usa: "http://localhost:3000/"
 // SCOPES rimossi completamente - causavano errori OAuth
 
 export default function App(){
@@ -24,6 +25,8 @@ export default function App(){
       
       const oauthUrl = u.toString();
       console.log('OAuth URL:', oauthUrl);
+      console.log('Client ID:', CLIENT_ID);
+      console.log('Redirect URI:', REDIRECT_URI);
       
       // Verifica che l'URL non contenga scope
       if (oauthUrl.includes('scope=')) {
