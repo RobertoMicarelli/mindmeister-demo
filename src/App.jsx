@@ -21,9 +21,7 @@ export default function App(){
 
 
   const loginToMindMeister = () => {
-    alert('OAuth temporaneamente disabilitato a causa di problemi CORS.\n\nUsa "Carica con API Keys" invece.');
-    return;
-    
+    // Temporaneamente riabilitato per test
     try {
       const u = new URL('https://www.mindmeister.com/oauth2/authorize');
       u.searchParams.set('response_type', 'code');
@@ -199,6 +197,19 @@ export default function App(){
           headers: { 
             'Authorization': `Basic ${btoa(`${API_SHARED_KEY}:${API_SECRET_KEY}`)}`
           }
+        },
+        {
+          url: 'https://www.mindmeister.com/api/v2/maps',
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${API_SHARED_KEY}`
+          },
+          body: JSON.stringify({ 
+            name: 'Test Map', 
+            theme: 'Aquarelle', 
+            layout: 'mindmap' 
+          })
         }
       ];
       
@@ -209,7 +220,8 @@ export default function App(){
         try {
           const response = await fetch(endpoint.url, {
             method: endpoint.method,
-            headers: endpoint.headers
+            headers: endpoint.headers,
+            body: endpoint.body
           });
           
           console.log(`Endpoint ${i + 1} response status:`, response.status);
@@ -563,6 +575,17 @@ export default function App(){
             alert(`Stato App:\nToken: ${!!token}\nFile: ${!!file}\nStatus: ${status}\n\nVedi console per dettagli`);
           }}>
             Stato App
+          </button>
+          <button className="button red" onClick={() => {
+            const u = new URL('https://www.mindmeister.com/oauth2/authorize');
+            u.searchParams.set('response_type', 'code');
+            u.searchParams.set('client_id', CLIENT_ID);
+            u.searchParams.set('redirect_uri', REDIRECT_URI);
+            u.searchParams.set('state', crypto.randomUUID());
+            console.log('OAuth URL generato:', u.toString());
+            alert('OAuth URL: ' + u.toString() + '\n\nCopia questo URL e aprilo in una nuova tab per testare.');
+          }}>
+            Test OAuth URL
           </button>
         </div>
 
