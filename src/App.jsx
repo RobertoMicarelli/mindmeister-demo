@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 const CLIENT_ID = "SC42NPAvo_Kyx4j0mwywh6qnGqdXMMpl5GYnSfqgxzs";
+const CLIENT_SECRET = "PNvybtsb36E8ugzey9yL_SHneGmfrOL0lh7WEbdrb7M";
 const REDIRECT_URI = "https://robertomicarelli.github.io/mindmeister-demo/";
 // Per test locale, usa: "http://localhost:3000/"
 // SCOPES rimossi completamente - causavano errori OAuth
@@ -17,13 +18,11 @@ export default function App(){
   const loginToMindMeister = () => {
     try {
       const u = new URL('https://www.mindmeister.com/oauth2/authorize');
-      u.searchParams.set('response_type', 'token');
+      u.searchParams.set('response_type', 'code');
       u.searchParams.set('client_id', CLIENT_ID);
       u.searchParams.set('redirect_uri', REDIRECT_URI);
       // Scope rimosso completamente - causava errori OAuth
       u.searchParams.set('state', crypto.randomUUID());
-      // Forza l'Implicit Flow
-      u.searchParams.set('grant_type', 'implicit');
       
       const oauthUrl = u.toString();
       console.log('OAuth URL:', oauthUrl);
@@ -36,6 +35,8 @@ export default function App(){
         alert('Errore: URL OAuth contiene ancora scope. Controlla il codice.');
         return;
       }
+      
+      console.log('Usando Authorization Code Flow con client_secret');
       
       window.location.assign(oauthUrl);
     } catch (error) {
@@ -142,8 +143,7 @@ export default function App(){
     try {
       console.log('Exchanging code for token...');
       
-      // Per ora, proviamo a fare una richiesta diretta al token endpoint
-      // Nota: questo potrebbe richiedere un client_secret che non abbiamo
+      // Exchange del code per token usando client_secret
       const response = await fetch('https://www.mindmeister.com/oauth2/token', {
         method: 'POST',
         headers: {
@@ -152,6 +152,7 @@ export default function App(){
         body: new URLSearchParams({
           grant_type: 'authorization_code',
           client_id: CLIENT_ID,
+          client_secret: CLIENT_SECRET,
           code: code,
           redirect_uri: REDIRECT_URI,
         })
