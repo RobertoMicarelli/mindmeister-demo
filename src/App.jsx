@@ -169,6 +169,33 @@ export default function App(){
           url: 'https://www.mindmeister.com/api/v2/maps',
           method: 'GET',
           headers: { 'Authorization': `Bearer ${API_SHARED_KEY}` }
+        },
+        {
+          url: 'https://www.mindmeister.com/api/v2/maps',
+          method: 'GET',
+          headers: { 'X-API-Key': API_SHARED_KEY }
+        },
+        {
+          url: 'https://www.mindmeister.com/api/v1/user',
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${API_SHARED_KEY}` }
+        },
+        {
+          url: 'https://www.mindmeister.com/api/v1/maps',
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${API_SHARED_KEY}` }
+        },
+        {
+          url: 'https://www.mindmeister.com/api/user',
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${API_SHARED_KEY}` }
+        },
+        {
+          url: 'https://www.mindmeister.com/api/v2/user',
+          method: 'GET',
+          headers: { 
+            'Authorization': `Basic ${btoa(`${API_SHARED_KEY}:${API_SECRET_KEY}`)}`
+          }
         }
       ];
       
@@ -187,7 +214,7 @@ export default function App(){
           if (response.ok) {
             const data = await response.json();
             console.log(`Endpoint ${i + 1} successful:`, data);
-            alert(`API Key authentication successful!\nEndpoint: ${endpoint.url}\nMethod: ${endpoint.method}`);
+            alert(`API Key authentication successful!\nEndpoint: ${endpoint.url}\nMethod: ${endpoint.method}\nHeaders: ${JSON.stringify(endpoint.headers)}`);
             return true;
           } else {
             const errorText = await response.text();
@@ -199,7 +226,7 @@ export default function App(){
       }
       
       console.error('All API Key authentication attempts failed');
-      alert('API Key authentication failed. Check console for details.');
+      alert('API Key authentication failed. Check console for details.\n\nProva ora l\'OAuth che dovrebbe funzionare!');
       return false;
       
     } catch (error) {
