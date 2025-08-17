@@ -43,11 +43,28 @@ export default function App(){
   };
 
   useEffect(() => {
-    try {
+    const handleOAuth = async () => {
+      try {
       console.log('App loaded, checking for OAuth response...');
       console.log('Current URL:', window.location.href);
       console.log('Hash:', window.location.hash);
+      console.log('Search params:', window.location.search);
       
+      // Controlla se abbiamo un code nei parametri query (Authorization Code Flow)
+      const urlParams = new URLSearchParams(window.location.search);
+      const authCode = urlParams.get('code');
+      
+      if (authCode) {
+        console.log('Authorization code ricevuto:', authCode);
+        setStatus('uploading');
+        const success = await exchangeCodeForToken(authCode);
+        if (!success) {
+          setStatus('error');
+        }
+        return;
+      }
+      
+      // Controlla se abbiamo un token nell'hash (Implicit Flow)
       const hash = new URLSearchParams(window.location.hash.replace('#',''));
       const t = hash.get('access_token');
       const error = hash.get('error');
@@ -84,10 +101,13 @@ export default function App(){
           console.log('Nessun token trovato');
         }
       }
-    } catch (error) {
-      console.error('Errore durante il parsing del token:', error);
-      setStatus('error');
-    }
+      } catch (error) {
+        console.error('Errore durante il parsing del token:', error);
+        setStatus('error');
+      }
+    };
+    
+    handleOAuth();
   }, []);
 
   const onPick = (e) => {
@@ -103,6 +123,52 @@ export default function App(){
     if (!f) return;
     if (!/\.(md|opml)$/i.test(f.name)) return alert('Accetto solo .md o .opml');
     setFile(f);
+  };
+
+  const exchangeCodeForToken = async (code) => {
+    try {
+      console.log('Exchanging code for token...');
+      
+      // Per ora, proviamo a fare una richiesta diretta al token endpoint
+      // Nota: questo potrebbe richiedere un client_secret che non abbiamo
+      const response = await fetch('https://www.mindmeister.com/oauth2/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          client_id: CLIENT_ID,
+          code: code,
+          redirect_uri: REDIRECT_URI,
+        })
+      });
+      
+      console.log('Token exchange response status:', response.status);
+      
+      if (response.ok) {
+        const tokenData = await response.json();
+        console.log('Token exchange successful:', tokenData);
+        
+        if (tokenData.access_token) {
+          setToken(tokenData.access_token);
+          localStorage.setItem('mm_token', tokenData.access_token);
+          window.history.replaceState({}, '', window.location.pathname);
+          setStatus('idle');
+          return true;
+        }
+      } else {
+        const errorText = await response.text();
+        console.error('Token exchange failed:', response.status, errorText);
+        alert(`Errore exchange token: ${response.status} - ${errorText}`);
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Errore durante exchange token:', error);
+      alert('Errore durante exchange del code per token');
+      return false;
+    }
   };
 
   const testToken = async (tokenToTest) => {
