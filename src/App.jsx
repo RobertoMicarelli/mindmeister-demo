@@ -239,45 +239,68 @@ export default function App(){
   const exchangeCodeForToken = async (code) => {
     try {
       console.log('Exchanging code for token...');
+      console.log('Code:', code);
+      console.log('Client ID:', CLIENT_ID);
+      console.log('Client Secret:', CLIENT_SECRET ? 'Presente' : 'Mancante');
+      console.log('Redirect URI:', REDIRECT_URI);
       
       // Exchange del code per token usando client_secret
-      const response = await fetch('https://www.mindmeister.com/oauth2/token', {
+      const tokenUrl = 'https://www.mindmeister.com/oauth2/token';
+      const body = new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: CLIENT_ID,
+        client_secret: CLIENT_SECRET,
+        code: code,
+        redirect_uri: REDIRECT_URI,
+      });
+      
+      console.log('Token URL:', tokenUrl);
+      console.log('Request body:', body.toString());
+      
+      const response = await fetch(tokenUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: new URLSearchParams({
-          grant_type: 'authorization_code',
-          client_id: CLIENT_ID,
-          client_secret: CLIENT_SECRET,
-          code: code,
-          redirect_uri: REDIRECT_URI,
-        })
+        body: body
       });
       
       console.log('Token exchange response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
       
       if (response.ok) {
         const tokenData = await response.json();
         console.log('Token exchange successful:', tokenData);
         
         if (tokenData.access_token) {
+          console.log('Access token ricevuto, length:', tokenData.access_token.length);
           setToken(tokenData.access_token);
           localStorage.setItem('mm_token', tokenData.access_token);
           window.history.replaceState({}, '', window.location.pathname);
           setStatus('idle');
+          alert('OAuth completato con successo! Token salvato.');
           return true;
+        } else {
+          console.error('Token response non contiene access_token:', tokenData);
+          alert('Errore: Response non contiene access_token');
+          return false;
         }
       } else {
         const errorText = await response.text();
         console.error('Token exchange failed:', response.status, errorText);
-        alert(`Errore exchange token: ${response.status} - ${errorText}`);
+        
+        // Prova a parsare l'errore JSON se possibile
+        try {
+          const errorJson = JSON.parse(errorText);
+          alert(`Errore exchange token: ${response.status}\n${errorJson.error || ''}\n${errorJson.error_description || ''}`);
+        } catch {
+          alert(`Errore exchange token: ${response.status}\n${errorText.substring(0, 200)}`);
+        }
+        return false;
       }
-      
-      return false;
     } catch (error) {
       console.error('Errore durante exchange token:', error);
-      alert('Errore durante exchange del code per token');
+      alert('Errore durante exchange del code per token: ' + error.message);
       return false;
     }
   };
