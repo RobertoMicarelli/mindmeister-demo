@@ -148,33 +148,63 @@ export default function App(){
     try {
       console.log('Testing API Key authentication...');
       
-      // Prova a creare una mappa usando le API Keys
-      const response = await fetch('https://www.mindmeister.com/api/v2/maps', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${API_SHARED_KEY}`
+      // Prova diversi endpoint e metodi di autenticazione
+      const endpoints = [
+        {
+          url: 'https://www.mindmeister.com/api/v2/user',
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${API_SHARED_KEY}` }
         },
-        body: JSON.stringify({ 
-          name: 'Test API Key ' + new Date().toLocaleString(), 
-          theme: 'Aquarelle', 
-          layout: 'mindmap' 
-        })
-      });
+        {
+          url: 'https://www.mindmeister.com/api/v2/user',
+          method: 'GET',
+          headers: { 'X-API-Key': API_SHARED_KEY }
+        },
+        {
+          url: 'https://www.mindmeister.com/api/v2/user',
+          method: 'GET',
+          headers: { 'Authorization': `APIKey ${API_SHARED_KEY}` }
+        },
+        {
+          url: 'https://www.mindmeister.com/api/v2/maps',
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${API_SHARED_KEY}` }
+        }
+      ];
       
-      console.log('API Key test response status:', response.status);
-      
-      if (response.ok) {
-        const mapData = await response.json();
-        console.log('API Key authentication successful:', mapData);
-        return true;
-      } else {
-        const errorText = await response.text();
-        console.error('API Key authentication failed:', response.status, errorText);
-        return false;
+      for (let i = 0; i < endpoints.length; i++) {
+        const endpoint = endpoints[i];
+        console.log(`Testing endpoint ${i + 1}:`, endpoint.url, endpoint.method);
+        
+        try {
+          const response = await fetch(endpoint.url, {
+            method: endpoint.method,
+            headers: endpoint.headers
+          });
+          
+          console.log(`Endpoint ${i + 1} response status:`, response.status);
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log(`Endpoint ${i + 1} successful:`, data);
+            alert(`API Key authentication successful!\nEndpoint: ${endpoint.url}\nMethod: ${endpoint.method}`);
+            return true;
+          } else {
+            const errorText = await response.text();
+            console.log(`Endpoint ${i + 1} failed:`, response.status, errorText.substring(0, 200));
+          }
+        } catch (error) {
+          console.log(`Endpoint ${i + 1} error:`, error.message);
+        }
       }
+      
+      console.error('All API Key authentication attempts failed');
+      alert('API Key authentication failed. Check console for details.');
+      return false;
+      
     } catch (error) {
       console.error('Errore durante test API Key:', error);
+      alert('Errore durante test API Key: ' + error.message);
       return false;
     }
   };
@@ -330,6 +360,17 @@ export default function App(){
           </button>
           <button className="button green" onClick={testApiKeyAuth}>
             Test API Keys
+          </button>
+          <button className="button orange" onClick={() => {
+            const u = new URL('https://www.mindmeister.com/oauth2/authorize');
+            u.searchParams.set('response_type', 'code');
+            u.searchParams.set('client_id', CLIENT_ID);
+            u.searchParams.set('redirect_uri', REDIRECT_URI);
+            u.searchParams.set('state', crypto.randomUUID());
+            console.log('OAuth URL generato:', u.toString());
+            alert('OAuth URL: ' + u.toString());
+          }}>
+            Test OAuth URL
           </button>
         </div>
 
