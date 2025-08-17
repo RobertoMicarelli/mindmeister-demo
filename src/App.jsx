@@ -22,6 +22,8 @@ export default function App(){
       u.searchParams.set('redirect_uri', REDIRECT_URI);
       // Scope rimosso completamente - causava errori OAuth
       u.searchParams.set('state', crypto.randomUUID());
+      // Forza l'Implicit Flow
+      u.searchParams.set('grant_type', 'implicit');
       
       const oauthUrl = u.toString();
       console.log('OAuth URL:', oauthUrl);
@@ -57,9 +59,13 @@ export default function App(){
       if (authCode) {
         console.log('Authorization code ricevuto:', authCode);
         setStatus('uploading');
+        
+        // Prova l'exchange del code per token
         const success = await exchangeCodeForToken(authCode);
         if (!success) {
-          setStatus('error');
+          console.log('Exchange fallito, provando a ricaricare la pagina...');
+          // Se l'exchange fallisce, ricarica la pagina per provare di nuovo
+          window.location.reload();
         }
         return;
       }
@@ -99,6 +105,13 @@ export default function App(){
           setToken(saved);
         } else {
           console.log('Nessun token trovato');
+          
+          // Controlla se siamo tornati dalla pagina di autorizzazione
+          if (window.location.search.includes('error=') || window.location.search.includes('state=')) {
+            console.log('Ritorno da pagina di autorizzazione senza token');
+            // Pulisci l'URL
+            window.history.replaceState({}, '', window.location.pathname);
+          }
         }
       }
       } catch (error) {
