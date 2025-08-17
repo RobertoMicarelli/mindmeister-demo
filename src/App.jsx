@@ -344,6 +344,101 @@ export default function App(){
     }
   };
 
+  const testOAuth2Endpoints = async () => {
+    console.log('=== TEST OAUTH2 ENDPOINTS ===');
+    console.log('Personal Access Token:', PERSONAL_ACCESS_TOKEN.substring(0, 10) + '...');
+    
+    // Test con endpoint OAuth2 standard
+    const oauth2Endpoints = [
+      'https://www.mindmeister.com/oauth2/userinfo',
+      'https://www.mindmeister.com/oauth2/me',
+      'https://www.mindmeister.com/oauth2/introspect',
+      'https://accounts.meister.co/oauth2/userinfo',
+      'https://accounts.meister.co/oauth2/me',
+      'https://api.meisterlabs.com/oauth2/userinfo',
+      'https://api.meisterlabs.com/oauth2/me'
+    ];
+    
+    for (const endpoint of oauth2Endpoints) {
+      console.log(`\n--- Testing ${endpoint} ---`);
+      
+      try {
+        const response = await fetch(endpoint, {
+          headers: { 
+            'Authorization': `Bearer ${PERSONAL_ACCESS_TOKEN}`,
+            'Accept': 'application/json'
+          }
+        });
+        
+        console.log(`Status: ${response.status}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('✅ SUCCESS:', data);
+          alert(`✅ Endpoint OAuth2 funzionante!\n${endpoint}\n\nVedi console per dettagli.`);
+          return endpoint;
+        } else {
+          const text = await response.text();
+          console.log(`❌ Error: ${text.substring(0, 200)}`);
+        }
+      } catch (error) {
+        console.log(`❌ Exception: ${error.message}`);
+      }
+    }
+    
+    console.log('\n❌ Nessun endpoint OAuth2 funzionante');
+    return null;
+  };
+
+  const testMeisterLabsAPI = async () => {
+    console.log('=== TEST MEISTERLABS API ===');
+    console.log('Personal Access Token:', PERSONAL_ACCESS_TOKEN.substring(0, 10) + '...');
+    
+    // Test con l'API di MeisterLabs (la società che possiede MindMeister)
+    const meisterLabsEndpoints = [
+      'https://api.meisterlabs.com/v1/user',
+      'https://api.meisterlabs.com/v1/maps',
+      'https://api.meisterlabs.com/v2/user',
+      'https://api.meisterlabs.com/v2/maps',
+      'https://api.meisterlabs.com/mindmeister/user',
+      'https://api.meisterlabs.com/mindmeister/maps',
+      'https://accounts.meister.co/api/v1/user',
+      'https://accounts.meister.co/api/v1/maps',
+      'https://accounts.meister.co/mindmeister/api/user',
+      'https://accounts.meister.co/mindmeister/api/maps'
+    ];
+    
+    for (const endpoint of meisterLabsEndpoints) {
+      console.log(`\n--- Testing ${endpoint} ---`);
+      
+      try {
+        const response = await fetch(endpoint, {
+          headers: { 
+            'Authorization': `Bearer ${PERSONAL_ACCESS_TOKEN}`,
+            'Accept': 'application/json'
+          }
+        });
+        
+        console.log(`Status: ${response.status}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('✅ SUCCESS:', data);
+          alert(`✅ Endpoint MeisterLabs funzionante!\n${endpoint}\n\nVedi console per dettagli.`);
+          return endpoint;
+        } else {
+          const text = await response.text();
+          console.log(`❌ Error: ${text.substring(0, 200)}`);
+        }
+      } catch (error) {
+        console.log(`❌ Exception: ${error.message}`);
+      }
+    }
+    
+    console.log('\n❌ Nessun endpoint MeisterLabs funzionante');
+    return null;
+  };
+
   const testMindMeisterEndpoints = async () => {
     console.log('=== TEST ENDPOINTS MINDMAPSTER ===');
     console.log('Personal Access Token:', PERSONAL_ACCESS_TOKEN.substring(0, 10) + '...');
@@ -790,6 +885,12 @@ export default function App(){
           </button>
           <button className="button green" onClick={testMindMeisterEndpoints}>
             Test Endpoints MM
+          </button>
+          <button className="button purple" onClick={testMeisterLabsAPI}>
+            Test MeisterLabs API
+          </button>
+          <button className="button orange" onClick={testOAuth2Endpoints}>
+            Test OAuth2
           </button>
         </div>
 
