@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 
 const CLIENT_ID = "SC42NPAvo_Kyx4j0mwywh6qnGqdXMMpl5GYnSfqgxzs";
 const REDIRECT_URI = "https://robertomicarelli.github.io/mindmeister-demo/";
-const SCOPES = "mindmeister.read mindmeister.write";
+// SCOPES rimossi completamente - causavano errori OAuth
 
 export default function App(){
   const [file, setFile] = useState(null);
@@ -19,12 +19,20 @@ export default function App(){
       u.searchParams.set('response_type', 'token');
       u.searchParams.set('client_id', CLIENT_ID);
       u.searchParams.set('redirect_uri', REDIRECT_URI);
-      // Rimuovo completamente lo scope per ora - potrebbe causare problemi
-      // u.searchParams.set('scope', SCOPES);
+      // Scope rimosso completamente - causava errori OAuth
       u.searchParams.set('state', crypto.randomUUID());
       
-      console.log('OAuth URL:', u.toString());
-      window.location.assign(u.toString());
+      const oauthUrl = u.toString();
+      console.log('OAuth URL:', oauthUrl);
+      
+      // Verifica che l'URL non contenga scope
+      if (oauthUrl.includes('scope=')) {
+        console.error('ERRORE: URL contiene ancora scope!');
+        alert('Errore: URL OAuth contiene ancora scope. Controlla il codice.');
+        return;
+      }
+      
+      window.location.assign(oauthUrl);
     } catch (error) {
       console.error('Errore durante il login:', error);
       alert('Errore durante il login a MindMeister. Controlla la console per dettagli.');
