@@ -8,6 +8,9 @@ const REDIRECT_URI = "https://robertomicarelli.github.io/mindmeister-demo/";
 const API_SHARED_KEY = "546bdb3aea72993ec65a74b80dc713abb9cd272da75006364ced7b4e20ad6038eb5e0b1937ba629293038ad02c81144e9b79861166932067db6e84964d49eeca";
 const API_SECRET_KEY = "e51a3f4edff253b58d16fcc07d734c56fecde4ca41d25b32d80eafdf8073fc7a20ffc00caa42ea927f8f4f59c61e844fabcbe69eff763c1f90bb8720fa1ed60b";
 
+// Personal Access Token - molto più semplice!
+const PERSONAL_ACCESS_TOKEN = "hZabQG3oasCNPSCSV0FeVnDjAtxYMzB8p3MvpPZmxaw";
+
 // Per test locale, usa: "http://localhost:3000/"
 // SCOPES rimossi completamente - causavano errori OAuth
 
@@ -341,6 +344,82 @@ export default function App(){
     }
   };
 
+  const uploadWithPersonalToken = async () => {
+    if (!file) {
+      alert('Seleziona un file .md o .opml');
+      return;
+    }
+    
+    try {
+      setStatus('uploading');
+      console.log('Upload con Personal Access Token iniziato...');
+      console.log('File:', file.name);
+      console.log('Token:', PERSONAL_ACCESS_TOKEN.substring(0, 10) + '...');
+      
+      // Crea una nuova mappa usando il Personal Access Token
+      const createResponse = await fetch('https://www.mindmeister.com/api/v2/maps', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${PERSONAL_ACCESS_TOKEN}`
+        },
+        body: JSON.stringify({ 
+          name: 'Import ' + new Date().toLocaleString(), 
+          theme: 'Aquarelle', 
+          layout: 'mindmap' 
+        })
+      });
+      
+      console.log('Create map response status:', createResponse.status);
+      
+      if (!createResponse.ok) {
+        const errorText = await createResponse.text();
+        throw new Error(`Create map failed: ${createResponse.status} - ${errorText}`);
+      }
+      
+      const mapData = await createResponse.json();
+      console.log('Map created successfully:', mapData);
+      
+      const mapId = mapData.id || mapData.map_id;
+      console.log('Map ID:', mapId);
+      
+      // Importa il file nella mappa
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('format', file.name.toLowerCase().endsWith('.opml') ? 'opml' : 'markdown');
+      
+      console.log('Uploading file:', file.name, 'format:', file.name.toLowerCase().endsWith('.opml') ? 'opml' : 'markdown');
+      
+      const importResponse = await fetch(`https://www.mindmeister.com/api/v2/maps/${mapId}/import`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${PERSONAL_ACCESS_TOKEN}`
+        },
+        body: fd
+      });
+      
+      console.log('Import response status:', importResponse.status);
+      
+      if (!importResponse.ok) {
+        const errorText = await importResponse.text();
+        throw new Error(`Import failed: ${importResponse.status} - ${errorText}`);
+      }
+      
+      const link = `https://www.mindmeister.com/map/${mapId}`;
+      console.log('Success! Map URL:', link);
+      
+      setMapUrl(link);
+      setEmbedUrl(`https://www.mindmeister.com/maps/${mapId}/embed`);
+      setStatus('done');
+      alert('Upload completato con successo usando Personal Access Token!');
+      
+    } catch (error) {
+      console.error('Upload Personal Token error:', error);
+      setStatus('error');
+      alert(`Errore durante upload con Personal Token: ${error.message}`);
+    }
+  };
+
   const uploadWithApiKeys = async () => {
     if (!file) {
       alert('Seleziona un file .md o .opml');
@@ -576,6 +655,9 @@ export default function App(){
             alert('OAuth URL: ' + u.toString() + '\n\nCopia questo URL e aprilo in una nuova tab per testare.');
           }}>
             Test OAuth URL
+          </button>
+          <button className="button blue" onClick={uploadWithPersonalToken}>
+            Carica con Personal Token
           </button>
         </div>
         
