@@ -21,6 +21,9 @@ export default function App(){
 
 
   const loginToMindMeister = () => {
+    alert('OAuth temporaneamente disabilitato a causa di problemi CORS.\n\nUsa "Carica con API Keys" invece.');
+    return;
+    
     try {
       const u = new URL('https://www.mindmeister.com/oauth2/authorize');
       u.searchParams.set('response_type', 'code');
@@ -326,6 +329,117 @@ export default function App(){
     }
   };
 
+  const uploadWithApiKeys = async () => {
+    if (!file) {
+      alert('Seleziona un file .md o .opml');
+      return;
+    }
+    
+    try {
+      setStatus('uploading');
+      console.log('Upload con API Keys iniziato...');
+      console.log('File:', file.name);
+      
+      // Prova diversi endpoint e metodi per le API Keys
+      const endpoints = [
+        {
+          url: 'https://www.mindmeister.com/api/v2/maps',
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${API_SHARED_KEY}`
+          },
+          body: JSON.stringify({ 
+            name: 'Import ' + new Date().toLocaleString(), 
+            theme: 'Aquarelle', 
+            layout: 'mindmap' 
+          })
+        },
+        {
+          url: 'https://www.mindmeister.com/api/v2/maps',
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-API-Key': API_SHARED_KEY
+          },
+          body: JSON.stringify({ 
+            name: 'Import ' + new Date().toLocaleString(), 
+            theme: 'Aquarelle', 
+            layout: 'mindmap' 
+          })
+        }
+      ];
+      
+      let mapId = null;
+      let successfulEndpoint = null;
+      
+      for (let i = 0; i < endpoints.length; i++) {
+        const endpoint = endpoints[i];
+        console.log(`Tentativo ${i + 1}:`, endpoint.url, endpoint.method);
+        
+        try {
+          const response = await fetch(endpoint.url, {
+            method: endpoint.method,
+            headers: endpoint.headers,
+            body: endpoint.body
+          });
+          
+          console.log(`Tentativo ${i + 1} response status:`, response.status);
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log(`Tentativo ${i + 1} successful:`, data);
+            mapId = data.id || data.map_id;
+            successfulEndpoint = endpoint;
+            break;
+          } else {
+            const errorText = await response.text();
+            console.log(`Tentativo ${i + 1} failed:`, response.status, errorText.substring(0, 200));
+          }
+        } catch (error) {
+          console.log(`Tentativo ${i + 1} error:`, error.message);
+        }
+      }
+      
+      if (!mapId) {
+        throw new Error('Impossibile creare mappa con API Keys');
+      }
+      
+      console.log('Mappa creata con successo, ID:', mapId);
+      
+      // Ora importa il file nella mappa
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('format', file.name.toLowerCase().endsWith('.opml') ? 'opml' : 'markdown');
+      
+      const importResponse = await fetch(`https://www.mindmeister.com/api/v2/maps/${mapId}/import`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': successfulEndpoint.headers.Authorization || `X-API-Key: ${API_SHARED_KEY}`
+        },
+        body: fd
+      });
+      
+      if (!importResponse.ok) {
+        const errorText = await importResponse.text();
+        throw new Error(`Import failed: ${importResponse.status} - ${errorText}`);
+      }
+      
+      const link = `https://www.mindmeister.com/map/${mapId}`;
+      console.log('Success! Map URL:', link);
+      
+      setMapUrl(link);
+      setEmbedUrl(`https://www.mindmeister.com/maps/${mapId}/embed`);
+      setStatus('done');
+      alert('Upload completato con successo usando API Keys!');
+      
+    } catch (error) {
+      console.error('Upload API Keys error:', error);
+      setStatus('error');
+      alert(`Errore durante upload con API Keys: ${error.message}`);
+    }
+  };
+
   const upload = async () => {
     console.log('Upload iniziato...');
     console.log('Token presente:', !!token);
@@ -434,16 +548,8 @@ export default function App(){
           <button className="button green" onClick={testApiKeyAuth}>
             Test API Keys
           </button>
-          <button className="button orange" onClick={() => {
-            const u = new URL('https://www.mindmeister.com/oauth2/authorize');
-            u.searchParams.set('response_type', 'code');
-            u.searchParams.set('client_id', CLIENT_ID);
-            u.searchParams.set('redirect_uri', REDIRECT_URI);
-            u.searchParams.set('state', crypto.randomUUID());
-            console.log('OAuth URL generato:', u.toString());
-            alert('OAuth URL: ' + u.toString());
-          }}>
-            Test OAuth URL
+          <button className="button orange" onClick={uploadWithApiKeys}>
+            Carica con API Keys
           </button>
           <button className="button purple" onClick={() => {
             console.log('=== STATO APP ===');
