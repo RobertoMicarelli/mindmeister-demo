@@ -304,11 +304,23 @@ export default function App(){
   };
 
   const upload = async () => {
-    if (!token) return loginToMindMeister();
-    if (!file) return alert('Seleziona un file .md o .opml');
+    console.log('Upload iniziato...');
+    console.log('Token presente:', !!token);
+    console.log('File presente:', !!file);
+    console.log('File name:', file?.name);
+    
+    if (!token) {
+      console.log('Nessun token, avvio login OAuth...');
+      return loginToMindMeister();
+    }
+    if (!file) {
+      console.log('Nessun file selezionato');
+      return alert('Seleziona un file .md o .opml');
+    }
     
     try {
       setStatus('uploading');
+      console.log('Inizio upload con token:', token.substring(0, 20) + '...');
       
       // Test del token prima di procedere
       const isTokenValid = await testToken(token);
@@ -319,11 +331,14 @@ export default function App(){
         return loginToMindMeister();
       }
       
+      console.log('Token valido, creo mappa...');
       const createRes = await fetch('https://www.mindmeister.com/api/v2/maps', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: 'Import ' + new Date().toLocaleString(), theme: 'Aquarelle', layout: 'mindmap' })
       });
+      
+      console.log('Create map response status:', createRes.status);
       
       if (!createRes.ok) {
         const errorText = await createRes.text();
@@ -332,18 +347,24 @@ export default function App(){
       }
       
       const created = await createRes.json();
-      console.log('Map created:', created);
+      console.log('Map created successfully:', created);
       
       const mapId = created.id || created.map_id;
+      console.log('Map ID:', mapId);
+      
       const fd = new FormData();
       fd.append('file', file);
       fd.append('format', file.name.toLowerCase().endsWith('.opml') ? 'opml' : 'markdown');
+      
+      console.log('Uploading file:', file.name, 'format:', file.name.toLowerCase().endsWith('.opml') ? 'opml' : 'markdown');
       
       const impRes = await fetch(`https://www.mindmeister.com/api/v2/maps/${mapId}/import`, {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + token },
         body: fd
       });
+      
+      console.log('Import response status:', impRes.status);
       
       if (!impRes.ok) {
         const errorText = await impRes.text();
@@ -352,6 +373,8 @@ export default function App(){
       }
       
       const link = created.web_url || `https://www.mindmeister.com/map/${mapId}`;
+      console.log('Success! Map URL:', link);
+      
       setMapUrl(link);
       setEmbedUrl(`https://www.mindmeister.com/maps/${mapId}/embed`);
       setStatus('done');
@@ -398,6 +421,19 @@ export default function App(){
             alert('OAuth URL: ' + u.toString());
           }}>
             Test OAuth URL
+          </button>
+          <button className="button purple" onClick={() => {
+            console.log('=== STATO APP ===');
+            console.log('Token presente:', !!token);
+            console.log('Token length:', token?.length);
+            console.log('Token preview:', token ? token.substring(0, 20) + '...' : 'null');
+            console.log('File presente:', !!file);
+            console.log('File name:', file?.name);
+            console.log('Status:', status);
+            console.log('localStorage token:', localStorage.getItem('mm_token'));
+            alert(`Stato App:\nToken: ${!!token}\nFile: ${!!file}\nStatus: ${status}\n\nVedi console per dettagli`);
+          }}>
+            Stato App
           </button>
         </div>
 
