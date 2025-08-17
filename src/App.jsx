@@ -14,26 +14,52 @@ export default function App(){
 
 
   const loginToMindMeister = () => {
-    const u = new URL('https://www.mindmeister.com/oauth2/authorize');
-    u.searchParams.set('response_type', 'token');
-    u.searchParams.set('client_id', CLIENT_ID);
-    u.searchParams.set('redirect_uri', REDIRECT_URI);
-    // 🔥 RIMUOVI LO SCOPE PER ORA
-    // u.searchParams.set('scope', SCOPES);
-    u.searchParams.set('state', crypto.randomUUID());
-    window.location.assign(u.toString());
+    try {
+      const u = new URL('https://www.mindmeister.com/oauth2/authorize');
+      u.searchParams.set('response_type', 'token');
+      u.searchParams.set('client_id', CLIENT_ID);
+      u.searchParams.set('redirect_uri', REDIRECT_URI);
+      // Rimuovo completamente lo scope per ora - potrebbe causare problemi
+      // u.searchParams.set('scope', SCOPES);
+      u.searchParams.set('state', crypto.randomUUID());
+      
+      console.log('OAuth URL:', u.toString());
+      window.location.assign(u.toString());
+    } catch (error) {
+      console.error('Errore durante il login:', error);
+      alert('Errore durante il login a MindMeister. Controlla la console per dettagli.');
+    }
   };
 
   useEffect(() => {
-    const hash = new URLSearchParams(window.location.hash.replace('#',''));
-    const t = hash.get('access_token');
-    if (t) {
-      setToken(t);
-      localStorage.setItem('mm_token', t);
-      window.history.replaceState({}, '', window.location.pathname);
-    } else {
-      const saved = localStorage.getItem('mm_token');
-      if (saved) setToken(saved);
+    try {
+      const hash = new URLSearchParams(window.location.hash.replace('#',''));
+      const t = hash.get('access_token');
+      const error = hash.get('error');
+      const errorDescription = hash.get('error_description');
+      
+      if (error) {
+        console.error('OAuth Error:', error, errorDescription);
+        alert(`Errore OAuth: ${error}\n${errorDescription || ''}`);
+        setStatus('error');
+        return;
+      }
+      
+      if (t) {
+        console.log('Token ricevuto con successo');
+        setToken(t);
+        localStorage.setItem('mm_token', t);
+        window.history.replaceState({}, '', window.location.pathname);
+      } else {
+        const saved = localStorage.getItem('mm_token');
+        if (saved) {
+          console.log('Token recuperato da localStorage');
+          setToken(saved);
+        }
+      }
+    } catch (error) {
+      console.error('Errore durante il parsing del token:', error);
+      setStatus('error');
     }
   }, []);
 
