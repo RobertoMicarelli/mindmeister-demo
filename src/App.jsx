@@ -3,6 +3,11 @@ import React, { useEffect, useState } from 'react';
 const CLIENT_ID = "SC42NPAvo_Kyx4j0mwywh6qnGqdXMMpl5GYnSfqgxzs";
 const CLIENT_SECRET = "PNvybtsb36E8ugzey9yL_SHneGmfrOL0lh7WEbdrb7M";
 const REDIRECT_URI = "https://robertomicarelli.github.io/mindmeister-demo/";
+
+// API Keys per autenticazione alternativa
+const API_SHARED_KEY = "546bdb3aea72993ec65a74b80dc713abb9cd272da75006364ced7b4e20ad6038eb5e0b1937ba629293038ad02c81144e9b79861166932067db6e84964d49eeca";
+const API_SECRET_KEY = "e51a3f4edff253b58d16fcc07d734c56fecde4ca41d25b32d80eafdf8073fc7a20ffc00caa42ea927f8f4f59c61e844fabcbe69eff763c1f90bb8720fa1ed60b";
+
 // Per test locale, usa: "http://localhost:3000/"
 // SCOPES rimossi completamente - causavano errori OAuth
 
@@ -137,6 +142,41 @@ export default function App(){
     if (!f) return;
     if (!/\.(md|opml)$/i.test(f.name)) return alert('Accetto solo .md o .opml');
     setFile(f);
+  };
+
+  const testApiKeyAuth = async () => {
+    try {
+      console.log('Testing API Key authentication...');
+      
+      // Prova a creare una mappa usando le API Keys
+      const response = await fetch('https://www.mindmeister.com/api/v2/maps', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${API_SHARED_KEY}`
+        },
+        body: JSON.stringify({ 
+          name: 'Test API Key ' + new Date().toLocaleString(), 
+          theme: 'Aquarelle', 
+          layout: 'mindmap' 
+        })
+      });
+      
+      console.log('API Key test response status:', response.status);
+      
+      if (response.ok) {
+        const mapData = await response.json();
+        console.log('API Key authentication successful:', mapData);
+        return true;
+      } else {
+        const errorText = await response.text();
+        console.error('API Key authentication failed:', response.status, errorText);
+        return false;
+      }
+    } catch (error) {
+      console.error('Errore durante test API Key:', error);
+      return false;
+    }
   };
 
   const exchangeCodeForToken = async (code) => {
@@ -287,6 +327,9 @@ export default function App(){
           </button>
           <button className="button" onClick={upload} disabled={!token}>
             Carica su MindMeister
+          </button>
+          <button className="button green" onClick={testApiKeyAuth}>
+            Test API Keys
           </button>
         </div>
 
