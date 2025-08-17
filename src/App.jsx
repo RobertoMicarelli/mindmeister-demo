@@ -33,28 +33,44 @@ export default function App(){
 
   useEffect(() => {
     try {
+      console.log('App loaded, checking for OAuth response...');
+      console.log('Current URL:', window.location.href);
+      console.log('Hash:', window.location.hash);
+      
       const hash = new URLSearchParams(window.location.hash.replace('#',''));
       const t = hash.get('access_token');
       const error = hash.get('error');
       const errorDescription = hash.get('error_description');
+      const state = hash.get('state');
+      
+      console.log('OAuth parameters:', { 
+        hasToken: !!t, 
+        error, 
+        errorDescription, 
+        state,
+        hashLength: window.location.hash.length 
+      });
       
       if (error) {
         console.error('OAuth Error:', error, errorDescription);
-        alert(`Errore OAuth: ${error}\n${errorDescription || ''}`);
+        alert(`Errore OAuth: ${error}\n${errorDescription || ''}\n\nProva a ricaricare la pagina o ricollegare l'account.`);
         setStatus('error');
         return;
       }
       
       if (t) {
-        console.log('Token ricevuto con successo');
+        console.log('Token ricevuto con successo, length:', t.length);
         setToken(t);
         localStorage.setItem('mm_token', t);
         window.history.replaceState({}, '', window.location.pathname);
+        setStatus('idle');
       } else {
         const saved = localStorage.getItem('mm_token');
         if (saved) {
-          console.log('Token recuperato da localStorage');
+          console.log('Token recuperato da localStorage, length:', saved.length);
           setToken(saved);
+        } else {
+          console.log('Nessun token trovato');
         }
       }
     } catch (error) {
@@ -78,35 +94,83 @@ export default function App(){
     setFile(f);
   };
 
+  const testToken = async (tokenToTest) => {
+    try {
+      console.log('Testing token validity...');
+      const response = await fetch('https://www.mindmeister.com/api/v2/user', {
+        headers: { 'Authorization': 'Bearer ' + tokenToTest }
+      });
+      
+      if (response.ok) {
+        const userData = await response.json();
+        console.log('Token valido, user:', userData.name || userData.email);
+        return true;
+      } else {
+        console.log('Token non valido, status:', response.status);
+        return false;
+      }
+    } catch (error) {
+      console.error('Errore test token:', error);
+      return false;
+    }
+  };
+
   const upload = async () => {
     if (!token) return loginToMindMeister();
     if (!file) return alert('Seleziona un file .md o .opml');
+    
     try {
       setStatus('uploading');
+      
+      // Test del token prima di procedere
+      const isTokenValid = await testToken(token);
+      if (!isTokenValid) {
+        console.log('Token non valido, richiedo nuovo login');
+        localStorage.removeItem('mm_token');
+        setToken(null);
+        return loginToMindMeister();
+      }
+      
       const createRes = await fetch('https://www.mindmeister.com/api/v2/maps', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: 'Import ' + new Date().toLocaleString(), theme: 'Aquarelle', layout: 'mindmap' })
       });
-      if (!createRes.ok) throw new Error('Create map failed');
+      
+      if (!createRes.ok) {
+        const errorText = await createRes.text();
+        console.error('Create map failed:', createRes.status, errorText);
+        throw new Error(`Create map failed: ${createRes.status} - ${errorText}`);
+      }
+      
       const created = await createRes.json();
+      console.log('Map created:', created);
+      
       const mapId = created.id || created.map_id;
       const fd = new FormData();
       fd.append('file', file);
       fd.append('format', file.name.toLowerCase().endsWith('.opml') ? 'opml' : 'markdown');
+      
       const impRes = await fetch(`https://www.mindmeister.com/api/v2/maps/${mapId}/import`, {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + token },
         body: fd
       });
-      if (!impRes.ok) throw new Error('Import failed');
+      
+      if (!impRes.ok) {
+        const errorText = await impRes.text();
+        console.error('Import failed:', impRes.status, errorText);
+        throw new Error(`Import failed: ${impRes.status} - ${errorText}`);
+      }
+      
       const link = created.web_url || `https://www.mindmeister.com/map/${mapId}`;
       setMapUrl(link);
       setEmbedUrl(`https://www.mindmeister.com/maps/${mapId}/embed`);
       setStatus('done');
     } catch (err) {
-      console.error(err);
+      console.error('Upload error:', err);
       setStatus('error');
+      alert(`Errore durante l'upload: ${err.message}`);
     }
   };
 
