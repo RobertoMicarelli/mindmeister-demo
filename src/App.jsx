@@ -557,12 +557,29 @@ export default function App(){
           <button className="button" onClick={upload} disabled={!token}>
             Carica su MindMeister
           </button>
+        </div>
+        
+        <div className="row">
           <button className="button green" onClick={testApiKeyAuth}>
             Test API Keys
           </button>
           <button className="button orange" onClick={uploadWithApiKeys}>
             Carica con API Keys
           </button>
+          <button className="button red" onClick={() => {
+            const u = new URL('https://www.mindmeister.com/oauth2/authorize');
+            u.searchParams.set('response_type', 'code');
+            u.searchParams.set('client_id', CLIENT_ID);
+            u.searchParams.set('redirect_uri', REDIRECT_URI);
+            u.searchParams.set('state', crypto.randomUUID());
+            console.log('OAuth URL generato:', u.toString());
+            alert('OAuth URL: ' + u.toString() + '\n\nCopia questo URL e aprilo in una nuova tab per testare.');
+          }}>
+            Test OAuth URL
+          </button>
+        </div>
+        
+        <div className="row">
           <button className="button purple" onClick={() => {
             console.log('=== STATO APP ===');
             console.log('Token presente:', !!token);
@@ -576,16 +593,14 @@ export default function App(){
           }}>
             Stato App
           </button>
-          <button className="button red" onClick={() => {
-            const u = new URL('https://www.mindmeister.com/oauth2/authorize');
-            u.searchParams.set('response_type', 'code');
-            u.searchParams.set('client_id', CLIENT_ID);
-            u.searchParams.set('redirect_uri', REDIRECT_URI);
-            u.searchParams.set('state', crypto.randomUUID());
-            console.log('OAuth URL generato:', u.toString());
-            alert('OAuth URL: ' + u.toString() + '\n\nCopia questo URL e aprilo in una nuova tab per testare.');
+          <button className="button gray" onClick={() => {
+            localStorage.removeItem('mm_token');
+            setToken(null);
+            setStatus('idle');
+            console.log('localStorage pulito, token rimosso');
+            alert('localStorage pulito! Token rimosso. Puoi ripartire da zero.');
           }}>
-            Test OAuth URL
+            Pulisci Token
           </button>
         </div>
 
