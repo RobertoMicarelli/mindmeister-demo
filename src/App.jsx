@@ -12,14 +12,15 @@ export default function App(){
   const [mapUrl, setMapUrl] = useState(null);
   const [embedUrl, setEmbedUrl] = useState(null);
 
+
   const loginToMindMeister = () => {
     const u = new URL('https://www.mindmeister.com/oauth2/authorize');
     u.searchParams.set('response_type', 'token');
     u.searchParams.set('client_id', CLIENT_ID);
     u.searchParams.set('redirect_uri', REDIRECT_URI);
-    u.searchParams.set('scope', SCOPES);
+    // 🔥 RIMUOVI LO SCOPE PER ORA
+    // u.searchParams.set('scope', SCOPES);
     u.searchParams.set('state', crypto.randomUUID());
-    console.log("Redirecting to:", u.toString());
     window.location.assign(u.toString());
   };
 
