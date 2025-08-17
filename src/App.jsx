@@ -602,6 +602,55 @@ export default function App(){
           }}>
             Pulisci Token
           </button>
+          <button className="button yellow" onClick={async () => {
+            console.log('=== TEST API KEYS DETTAGLIATO ===');
+            console.log('API Shared Key:', API_SHARED_KEY);
+            console.log('API Secret Key:', API_SECRET_KEY);
+            
+            // Test endpoint base
+            const endpoints = [
+              'https://www.mindmeister.com/api/v2/user',
+              'https://www.mindmeister.com/api/v2/maps',
+              'https://www.mindmeister.com/api/v1/user',
+              'https://www.mindmeister.com/api/user'
+            ];
+            
+            for (const endpoint of endpoints) {
+              console.log(`\n--- Testing ${endpoint} ---`);
+              
+              // Test con Bearer token
+              try {
+                const response = await fetch(endpoint, {
+                  headers: { 'Authorization': `Bearer ${API_SHARED_KEY}` }
+                });
+                console.log(`Bearer ${endpoint}: ${response.status}`);
+                if (response.ok) {
+                  const data = await response.json();
+                  console.log('Success:', data);
+                }
+              } catch (error) {
+                console.log(`Bearer ${endpoint}: Error - ${error.message}`);
+              }
+              
+              // Test con X-API-Key
+              try {
+                const response = await fetch(endpoint, {
+                  headers: { 'X-API-Key': API_SHARED_KEY }
+                });
+                console.log(`X-API-Key ${endpoint}: ${response.status}`);
+                if (response.ok) {
+                  const data = await response.json();
+                  console.log('Success:', data);
+                }
+              } catch (error) {
+                console.log(`X-API-Key ${endpoint}: Error - ${error.message}`);
+              }
+            }
+            
+            alert('Test API Keys completato! Vedi console per dettagli.');
+          }}>
+            Test API Dettagliato
+          </button>
         </div>
 
         <div className="status">
