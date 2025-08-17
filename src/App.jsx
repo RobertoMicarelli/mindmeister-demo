@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-const CLIENT_ID = "SC42NPAvo_Kyx4j0mwywh6qnGqdXMMpI5GYnSfqgxzs";
+const CLIENT_ID = "SC42NPAvo_Kyx4j0mwywh6qnGqdXMMpl5GYnSfqgxzs";
 const REDIRECT_URI = "https://robertomicarelli.github.io/mindmeister-demo/";
 const SCOPES = "mindmeister.read mindmeister.write";
 
